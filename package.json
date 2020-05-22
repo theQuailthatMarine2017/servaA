@@ -1,0 +1,11 @@
+{
+  "name": "shirikia_server-a",
+  "version": "1.0.0",
+  "description": "Shirikia System Server A",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Rony Marine Quail",
+  "license": "ISC"
+}
