@@ -8,29 +8,48 @@ const meetingsSchema = new mongoose.Schema({
         required:true,
         unique:true
     },
+    createdby:{
+        type:String,
+        required:true
+    },
+    start_now:{
+        type:Boolean,
+        default:false
+    },
     mobile:{
         type:String,
         required:true
     },
-    date: {
+
+    start_time: {
         type:Date,
         required:true
     },
     duration:{
-        type:String,
+        type:Number,
         required:true
     },
     attendees:{
         type:Array,
         required:true
     },
-    passkey:{
+    passcode:{
         type:String,
         required:true
+    },
+    meetingPaused:{
+        type:Boolean
+    },
+    timePaused:{
+        type:Date
+    },
+    meeting_complete:{
+        type:Boolean,
+        default:false
     }
 
 }, {timestamps: true});
 
-movieSchema.plugin(uniqueValidator, {message: 'Meeting Scheduled. Change Title'});
+meetingsSchema.plugin(uniqueValidator, {message: 'Meeting Scheduled. Change Title'});
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model('Meetings', meetingsSchema);

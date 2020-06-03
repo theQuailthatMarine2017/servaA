@@ -20,11 +20,15 @@ const userSchema = new mongoose.Schema({
         required:true
     },
     password:{
-        type:string,
+        type:String,
         required:true
+    },
+    attendedMeetings:{
+        type:Number,
+        default:0
     }
 }, {timestamps: true});
 
-movieSchema.plugin(uniqueValidator, {message: 'User Exists.'});
+userSchema.plugin(uniqueValidator, {message: 'User Exists.'});
 
 module.exports = mongoose.model('User', userSchema);
