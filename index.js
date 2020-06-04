@@ -138,6 +138,7 @@ app.post('/api/shirikia/create-account', async (req,res) => {
 
 	var user_account = null
 	var user_meetings = []
+
 	console.log(req.body)
 
 	try {
@@ -230,8 +231,6 @@ app.post('/api/shirikia/login', async (req,res) => {
                     // Get All Meetings From Database and Send Back
                     Meetings.find({},function(err,data) {
 
-
-                    	console.log("llll" + data)
                     	user_meetings = data
 
 							if (err) return res.send(500, {err});
