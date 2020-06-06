@@ -18,6 +18,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.15",
     "mongoose-unique-validator": "^2.0.3",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "randomatic": "^3.1.1"
   }
 }

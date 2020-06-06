@@ -8,6 +8,7 @@ const Meetings = require('./meetings');
 const User = require('./users');
 const fs = require('fs');
 var path = require('path');
+var randomize = require('randomatic');
 
 
 const app = express();
@@ -228,23 +229,12 @@ app.post('/api/shirikia/login', async (req,res) => {
 
                     user_account = user
 
-                    // Get All Meetings From Database and Send Back
-                    Meetings.find({},function(err,data) {
-
-                    	user_meetings = data
-
-							if (err) return res.send(500, {err});
-
-
-								return res.status(200).json({
+                    return res.status(200).json({
 					                        title: 'success',
 					                        token: token,
-					                        user_account,
-					                        user_meetings
+					                        user_account
 
 					                    });
-
-						})
 
 
                 }
@@ -281,6 +271,34 @@ app.post('/api/shirikia/login', async (req,res) => {
 					});
 
 	}
+
+});
+
+//get meetings for user
+app.get('/api/shirikia/get-meetings/', async(req,res) => {
+
+	console.log(req.query)
+
+	var meetings = null
+
+	Meetings.find({},function(err,data) {
+
+		if(err){
+			console.log(err)
+
+			return res.status(500).send({
+				   title: err
+				});
+
+			}
+			meetings = data
+			
+			res.status(200).send({
+				meetings
+			})
+
+	});
+
 
 });
 
