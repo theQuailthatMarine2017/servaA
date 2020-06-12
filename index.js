@@ -72,7 +72,7 @@ app.post('/api/shirikia/create-account', async (req,res) => {
 
 		
 		const from = 'SHIRIKIA-Verify Account';
-		const to = req.body.mobile;
+		const to = req.boedy.mobile;
 		const text = verifycode;
 		
 		nexmo.message.sendSms(from, to, text);
