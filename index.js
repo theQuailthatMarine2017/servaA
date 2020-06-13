@@ -32,7 +32,7 @@ app.use(express.json());
 const port = 7200;
 app.listen(port);
 
-mongoose.connect( "mongodb://localhost:27017/ShirikiaDB",
+mongoose.connect( "mongodb://localhost:27017/Shirikia",
                  { useUnifiedTopology : true, useNewUrlParser: true, useCreateIndex: true },
                 () => console.log(`Connection to database ${mongoose.connection.name} on ${mongoose.connection.host}:${mongoose.connection.port} status: ${mongoose.connection.readyState}`));
 
@@ -40,21 +40,27 @@ mongoose.connect( "mongodb://localhost:27017/ShirikiaDB",
 app.post('/api/shirikia/create-account', async (req,res) => {
 
 	var account_create = req.body
+	var verified = false
 
-	//Generate Random Verification Code
-	var verifycode = randomize('0', 5);
-	var expireTime = ms('1m');
+	console.log(account_create)
 
 	//Create token and Store Verfication Code with try catch block
 	try {
 
-		var verifytoken = jwt.sign( {action: 'verify'}, 'shikiria-verify-acc',{ expiresIn: expireTime });
+		var verifycode = randomize('0', 5);
 
-		var salt = bcrypt.genSaltSync(10);
-		var hashed_verifycode = bcrypt.hashSync(verifycode, salt);
+		console.log(account_create.mobile)
+		console.log(verifycode)
+		console.log(typeof verifycode)
+
+		var verifytoken = jwt.sign({
+								  data: account_create.mobile
+								}, 'shikiria-verify-acc', { expiresIn: ms('1m')})
+
+		console.log(verifytoken)
 
 		const verify_store = new VerifyToken({
-			verifycode: hashed_verifycode,
+			verifycode: verifycode,
 			token: verifytoken
 		});
 
@@ -70,17 +76,40 @@ app.post('/api/shirikia/create-account', async (req,res) => {
 
 		});
 
-		
 		const from = 'SHIRIKIA-Verify Account';
-		const to = req.boedy.mobile;
-		const text = verifycode;
-		
-		nexmo.message.sendSms(from, to, text);
+		const to = parseInt(account_create.mobile,10);
+		const text = 'Use the following code to verify your account and complete registration Code is only VALID for 1 MINUTE';
 
-		//If SMS successful send account to be created back to frontend
-		res.status(200).json({
-	    	account_create
-	    })
+		nexmo.message.sendSms(from, to, text, (err, responseData) => {
+
+		    if (err) {
+
+		        console.log(err);
+
+		    } else {
+
+		    	console.log(responseData)
+
+		        if(responseData.messages[0]['status'] === "0") {
+
+		            console.log("Message sent successfully.");
+
+		            	//If SMS successful send account to be created back to frontend
+						res.status(200).json({
+					    	account_create,
+					    	verified
+					    })
+
+		        } else {
+
+		        	console.log(responseData)
+
+		            console.log(`Message failed with error: ${responseData.messages[0]['error-text']}`);
+
+		        }
+		    }
+		});
+
 
 	} catch(error){
 
@@ -93,7 +122,7 @@ app.post('/api/shirikia/create-account', async (req,res) => {
 });
 
 //complete verify user account two step auth
-app.post('/api/shirikia/verify-account/', async(req,res) => {
+app.post('/api/shirikia/verify-account/', async (req,res) => {
 
 	//Get Verification code submited by user. Verify token also passed with user account details
 	console.log(req.body)
@@ -117,58 +146,58 @@ app.post('/api/shirikia/verify-account/', async(req,res) => {
 					title:"Token Not Found"
 				})
 
-			//Passcode found, verify the jwtoken has not expired
-			jwt.verify(passcode.token , 'shikiria-verify-acc', function(err, decoded) {
+				//Passcode found, verify the jwtoken has not expired
+				jwt.verify(passcode.token , 'shikiria-verify-acc', async function(err, decoded) {
 
-					if(err){
+						if(err){
 
-						if(err.name === 'TokenExpiredError'){
+							if(err.name === 'TokenExpiredError'){
 
-							return res.status(500).send({
-								title: "Token Expired"
-							});
+								return res.status(500).send({
+									title: "Token Expired"
+								});
+
+							}
 
 						}
 
-					}
+						//If not expired check action is verify and create the user account and store in database
+						if(decoded.action === 'verify'){
 
-					//If not expired check action is verify and create the user account and store in database
-					if(decoded.action === 'verify'){
+							var salt = bcrypt.genSaltSync(10);
+							var hashedPassword = bcrypt.hashSync(req.body.password, salt);
 
-						var salt = bcrypt.genSaltSync(10);
-						var hashedPassword = bcrypt.hashSync(req.body.password, salt);
+							const usersave = new User({
 
-						const user = new User({
+								email: req.body.email,
+								mobile: req.body.mobile,
+								fullnames: req.body.fullnames,
+								occupation: req.body.occupation,
+								password: hashedPassword,
+								verified:true
+							
+							});
 
-							email: req.body.email,
-							mobile: req.body.mobile,
-							fullnames: req.body.fullnames,
-							occupation: req.body.occupation,
-							password: hashedPassword
-						
-						});
+							const user = await usersave.save();
 
-						const newuser = await user.save();
 
-						console.log(newuser)
+							var token = jwt.sign({_id: newuser._id}, 'shikiria-pass-ke-qg-mr-ru-30005325');
 
-						var token = jwt.sign({_id: newuser._id}, 'shikiria-pass-ke-qg-mr-ru-30005325');
+							console.log(token)
 
-						console.log(token)
+							res.status(200).json({
+								title:'Created',
+								user,
+								token,
+								user_meetings
 
-						res.status(200).json({
-							title:'Created',
-							newuser,
-							token,
-							user_meetings
+							})
 
-						})
-
-					}
+						}
 
 
 
-				})
+					})
 
 			})
 

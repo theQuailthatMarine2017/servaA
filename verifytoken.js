@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const verifySchema = new mongoose.Schema({
     verifycode: {
-    	type:Int,
+    	type:Number,
         required:true
     },
     token:{
         type:String,
-        default:false
+        required:true
     }
 }, {timestamps: true});
 
