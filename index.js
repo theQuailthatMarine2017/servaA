@@ -11,10 +11,20 @@ const fs = require('fs');
 var path = require('path');
 var randomize = require('randomatic');
 var ms = require('ms');
-const Nexmo = require('nexmo');
+var AfricasTalking = require('africastalking');
+const https = require('https');
 
 
 const app = express();
+
+
+// Initialize Africa Talking
+var africasTalking = new AfricasTalking({
+    username: 'sandbox', // username is sandbox for sandbox applications
+    apiKey: '2ce01ce3c02d244ef21b15df97313532a4b07dde528fadfcd2bc887826ca1355',
+});
+
+var sms = africasTalking.SMS;
 
 app.use(cors());
 
@@ -30,12 +40,23 @@ app.use(function(req, res, next) {
 app.use(express.json());
 
 const port = 7200;
-app.listen(port);
+
+https.createServer({
+
+    key: fs.readFileSync('./key.pem'),
+    cert: fs.readFileSync('./cert.pem'),
+    passphrase: 'shirikia'
+
+}, app).listen(port);
 
 mongoose.connect( "mongodb://localhost:27017/Shirikia",
                  { useUnifiedTopology : true, useNewUrlParser: true, useCreateIndex: true },
                 () => console.log(`Connection to database ${mongoose.connection.name} on ${mongoose.connection.host}:${mongoose.connection.port} status: ${mongoose.connection.readyState}`));
 
+app.get('/test', async (req,res) => {
+
+	console.log('jsjsjs')
+})
 // create new user account
 app.post('/api/shirikia/create-account', async (req,res) => {
 
@@ -49,7 +70,7 @@ app.post('/api/shirikia/create-account', async (req,res) => {
 
 		var verifycode = randomize('0', 5);
 
-		console.log(account_create.mobile)
+		console.log("+"+account_create.mobile)
 		console.log(verifycode)
 		console.log(typeof verifycode)
 
@@ -68,46 +89,24 @@ app.post('/api/shirikia/create-account', async (req,res) => {
 
 		console.log(verify_account)
 
-		// send verification sms to mobile. Notify user code expires in 1m
-		const nexmo = new Nexmo({
+		var send_to = '+'+ account_create.mobile
+		var send_message = "Please Use The Following Verification Code " + verifycode + ". Code is only VALID for 1 Minute."
+		
 
-			apiKey: 'c135ac77',
-			apiSecret: 'pz1EmbdzUBcsjmeO',
+		sms.send({ to:send_to, message:send_message}).then(response => {
 
-		});
+		      console.log(response);
 
-		const from = 'SHIRIKIA-Verify Account';
-		const to = parseInt(account_create.mobile,10);
-		const text = 'Use the following code to verify your account and complete registration Code is only VALID for 1 MINUTE';
+		      res.status(200).json({
+				    	account_create,
+				    	verified
+				    });
+		      
+		}).catch(error => {
 
-		nexmo.message.sendSms(from, to, text, (err, responseData) => {
+		      console.log(error);
+		      res.json(error.toString());
 
-		    if (err) {
-
-		        console.log(err);
-
-		    } else {
-
-		    	console.log(responseData)
-
-		        if(responseData.messages[0]['status'] === "0") {
-
-		            console.log("Message sent successfully.");
-
-		            	//If SMS successful send account to be created back to frontend
-						res.status(200).json({
-					    	account_create,
-					    	verified
-					    })
-
-		        } else {
-
-		        	console.log(responseData)
-
-		            console.log(`Message failed with error: ${responseData.messages[0]['error-text']}`);
-
-		        }
-		    }
 		});
 
 
