@@ -14,10 +14,22 @@ var ms = require('ms');
 var nodemailer = require('nodemailer');
 var smtpTransport = require('nodemailer-smtp-transport');
 const https = require('https');
+// const Mpesa = require("mpesa-api").Mpesa;
 
 
 const app = express();
 
+
+// const credentials = {
+//     client_key: 'fNd8vObPnkxgG23FJjWPO9qWRAG5spLN ',
+//     client_secret: 'yVorKwxARGr7S9jI ',
+//     initiator_password: 'GJPT6iQuYlgrHYeP8J8JrfoV6wUz/S1wEioMzuAEKWXXXryVRJa+HZ6D/SED+ju90F+eydLQ0PSUTbP3fensXoWqRBGwwmoNkSSfsK0l6KNhrr1VllFYP017/MVkuJZq41UlzKnU366yafRhD9D2SkMWW0NhP/6qQ81ah8NDQdKmwbbEOLMzXJc1qXsZpXovMpk2vqQD6cM2yAfUsXt6CU5pOQfXErpfxnqXXG1WG4usq5r7WZxRNswk1leI/2luSNjU2JG0oNs0E/3vJfSOTTG5VgIx/vN/nJXgPoJK1C1SXT+Cb43IBXrawVgfCo4M89Iua55wpOHvFYmUkPNOyA==',
+//     certificatepath: null
+// };
+
+// const environment = "sandbox";
+
+// const mpesa = new Mpesa(credentials, environment);
 
 //Nodemailer Transport Setting
 var transport = nodemailer.createTransport(smtpTransport({
@@ -60,6 +72,7 @@ app.get('/test', async (req,res) => {
 
 	console.log('jsjsjs')
 })
+
 // create new user account
 app.post('/api/shirikia/create-account', async (req,res) => {
 
@@ -332,6 +345,8 @@ app.get('/api/shirikia/get-meetings/', async(req,res) => {
 
 			}
 			meetings = data
+
+			console.log(meetings)
 			
 			res.status(200).send({
 				meetings
@@ -341,5 +356,51 @@ app.get('/api/shirikia/get-meetings/', async(req,res) => {
 
 
 });
+
+//Schedule Meeting with Mpesa Verify Code
+app.post('/api/shirikia/schedule-meeting', async(req,res) => {
+
+	console.log(req.body)
+
+	try {
+
+			//Hash Secret Passcode
+		var salt = bcrypt.genSaltSync(10);
+		var hashedPasscode = bcrypt.hashSync(req.body.passcode, salt);
+
+		const scheduleMeetings = new Meetings({
+
+					title: req.body.title,
+					createdBy: req.body.scheduledBy,
+					start_time: req.body.date,
+					attendees: req.body.attendees,
+					passcode:hashedPasscode
+				
+				});
+
+		const meeting = await scheduleMeetings.save();
+
+		console.log(meeting)
+
+		res.status(200).json({
+			title:'Success'
+
+		})
+
+
+	} catch(err) {
+
+		return res.status(500).send({
+					   title: err
+					});
+
+	}
+
+
+
+})
+
+
+
 
 console.log('Server is listening on port ' + port);
